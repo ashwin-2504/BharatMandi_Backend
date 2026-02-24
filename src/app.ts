@@ -10,6 +10,9 @@ import { config } from './utils/config.js';
 
 const app = express();
 
+// Trust proxy for rate limiting (when behind Vercel/proxies)
+app.set('trust proxy', 1);
+
 // Security Hardening
 app.use(helmet());
 app.use(cors());
