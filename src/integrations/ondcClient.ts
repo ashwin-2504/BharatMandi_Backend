@@ -13,12 +13,12 @@ class OndcClient {
   private client: AxiosInstance;
 
   constructor() {
-    // Ensure baseURL ends with a slash for proper path joining
-    const normalizedBaseUrl = MOCK_SERVICE_URL.endsWith('/') ? MOCK_SERVICE_URL : `${MOCK_SERVICE_URL}/`;
+    // Ensure baseURL DOES NOT end with a slash and paths START with one
+    const normalizedBaseUrl = MOCK_SERVICE_URL.endsWith('/') ? MOCK_SERVICE_URL.slice(0, -1) : MOCK_SERVICE_URL;
 
     this.client = axios.create({
       baseURL: normalizedBaseUrl,
-      timeout: 30000,
+      timeout: 60000, // Increased to 60s for cold starts
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': MOCK_API_KEY,
@@ -26,22 +26,30 @@ class OndcClient {
     });
   }
 
-  async checkHealth() {
-    try {
-      logger.info(`Checking ONDC Mock Server health at: ${MOCK_SERVICE_URL}/health`);
-      const response = await this.client.get('health');
-      logger.info('ONDC Mock Server Connectivity: SUCCESS', { 
-        status: response.data?.status || 'OK',
-        url: `${MOCK_SERVICE_URL}/health`
-      });
-      return true;
-    } catch (error: any) {
-      logger.error(`ONDC Mock Server Connectivity: FAILED at ${MOCK_SERVICE_URL}/health`, { 
-        error: error.message,
-        code: error.code
-      });
-      return false;
+  async checkHealth(retries = 2) {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        if (i > 0) logger.info(`Retrying ONDC health check (Attempt ${i + 1}/${retries + 1})...`);
+        logger.info(`Checking ONDC Mock Server health at: ${MOCK_SERVICE_URL}/health`);
+        const response = await this.client.get('/health');
+        logger.info('ONDC Mock Server Connectivity: SUCCESS', { 
+          status: response.data?.status || 'OK',
+          url: `${MOCK_SERVICE_URL}/health`
+        });
+        return true;
+      } catch (error: any) {
+        if (i === retries) {
+          logger.error(`ONDC Mock Server Connectivity: FAILED after ${retries + 1} attempts at ${MOCK_SERVICE_URL}/health`, { 
+            error: error.message,
+            code: error.code
+          });
+          return false;
+        }
+        // Wait 2 seconds before retry
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
     }
+    return false;
   }
 
   async startFlow(flowId: string, sessionId: string) {
