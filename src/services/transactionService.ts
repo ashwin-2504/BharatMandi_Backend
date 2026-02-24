@@ -59,9 +59,29 @@ export class TransactionService {
     return result;
   }
 
-  async confirm(transactionId: string, inputs?: object) {
+  async confirm(transactionId: string, inputs?: any) {
     const result = await ondcClient.proceedFlow(transactionId, inputs);
     await this.updateTransactionStatus(transactionId, result.status || 'CONFIRMED');
+
+    // Record order in 'orders' table if confirmation is successful
+    if (result.status === 'CONFIRMED' || result.status === 'SUCCESS' || !result.error) {
+      try {
+        const orderData = {
+          customer_name: inputs?.customer_name || 'Buyer',
+          total_amount: inputs?.total_amount || 0,
+          seller_id: inputs?.seller_id || 'unknown_seller',
+          items: inputs?.items || [],
+          status: 'PENDING',
+        };
+
+        const { error } = await supabase.from('orders').insert([orderData]);
+        if (error) logger.error('Error recording order after confirmation', error);
+        else logger.info(`Order recorded for transaction: ${transactionId}`);
+      } catch (err) {
+        logger.error('Error in post-confirmation order recording', err);
+      }
+    }
+
     return result;
   }
 

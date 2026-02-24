@@ -45,6 +45,22 @@ export class ProductController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async searchProducts(req: Request, res: Response) {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query) {
+        return res.status(400).json({ error: 'Missing query parameter q' });
+      }
+
+      const products = await productService.searchProducts(query);
+      res.json(products);
+    } catch (error) {
+      logger.error('Controller error in searchProducts:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const productController = new ProductController();

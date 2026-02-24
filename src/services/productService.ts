@@ -49,6 +49,21 @@ export class ProductService {
 
     return data || [];
   }
+
+  async searchProducts(query: string): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`name.ilike.%${query}%,category.ilike.%${query}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error(`Error searching products with query ${query}`, error);
+      throw error;
+    }
+
+    return data || [];
+  }
 }
 
 export const productService = new ProductService();

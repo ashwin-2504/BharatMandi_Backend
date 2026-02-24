@@ -23,6 +23,7 @@ router.get('/api/status/:transactionId', transactionController.getStatus);
 // Product routes
 router.post('/api/products', productController.addProduct);
 router.get('/api/products', productController.getAllProducts);
+router.get('/api/products/search', productController.searchProducts);
 router.get('/api/products/seller/:sellerId', productController.getSellerProducts);
 
 // Order and Stats routes
