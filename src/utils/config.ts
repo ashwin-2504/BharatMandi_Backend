@@ -29,7 +29,7 @@ export const config = {
   port: process.env.PORT || 3000,
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseKey: process.env.SUPABASE_KEY || '',
-  mockServiceUrl: process.env.MOCK_SERVICE_URL || '',
-  mockApiKey: process.env.MOCK_API_KEY || '',
+  mockServiceUrl: process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app',
+  mockApiKey: process.env.MOCK_API_KEY || 'default_key',
   nodeEnv: process.env.NODE_ENV || 'development'
 };
