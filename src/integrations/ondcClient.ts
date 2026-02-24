@@ -12,8 +12,11 @@ class OndcClient {
   private client: AxiosInstance;
 
   constructor() {
+    // Ensure baseURL ends with a slash and paths don't start with one to avoid stripping the base path in Axios
+    const normalizedBaseUrl = MOCK_SERVICE_URL.endsWith('/') ? MOCK_SERVICE_URL : `${MOCK_SERVICE_URL}/`;
+
     this.client = axios.create({
-      baseURL: MOCK_SERVICE_URL,
+      baseURL: normalizedBaseUrl,
       timeout: 8000,
       headers: {
         'Content-Type': 'application/json',
@@ -26,7 +29,7 @@ class OndcClient {
     try {
       const transaction_id = randomUUID();
       logger.info(`Starting ONDC flow: ${flowId} for session: ${sessionId}, transaction_id: ${transaction_id}`);
-      const response = await this.client.post('/flows/new', {
+      const response = await this.client.post('flows/new', {
         flow_id: flowId,
         session_id: sessionId,
         transaction_id,
@@ -41,7 +44,7 @@ class OndcClient {
   async proceedFlow(transactionId: string, sessionId: string, inputs?: object) {
     try {
       logger.info(`Proceeding ONDC flow for transaction: ${transactionId} (session: ${sessionId})`, { inputs });
-      const response = await this.client.post('/flows/proceed', {
+      const response = await this.client.post('flows/proceed', {
         transaction_id: transactionId,
         session_id: sessionId,
         inputs,
@@ -55,7 +58,7 @@ class OndcClient {
   async triggerManualAction(action: string, payload: object) {
     try {
       logger.info(`Triggering manual action: ${action}`, { payload });
-      const response = await this.client.post('/action/trigger', {
+      const response = await this.client.post('action/trigger', {
         action,
         payload,
       });

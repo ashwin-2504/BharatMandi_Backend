@@ -5,9 +5,7 @@ dotenv.config();
 
 const requiredEnv = [
   'SUPABASE_URL',
-  'SUPABASE_KEY',
-  'MOCK_SERVICE_URL',
-  'MOCK_API_KEY'
+  'SUPABASE_KEY'
 ];
 
 export const validateEnv = () => {
@@ -25,11 +23,16 @@ export const validateEnv = () => {
 // Run validation immediately on import
 validateEnv();
 
+const getMockUrl = () => {
+  const url = process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app/mock/playground';
+  return url.startsWith('http') ? url : `https://${url}`;
+};
+
 export const config = {
   port: process.env.PORT || 3000,
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseKey: process.env.SUPABASE_KEY || '',
-  mockServiceUrl: process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app/mock/playground',
+  mockServiceUrl: getMockUrl(),
   mockApiKey: process.env.MOCK_API_KEY || '',
   nodeEnv: process.env.NODE_ENV || 'development'
 };
