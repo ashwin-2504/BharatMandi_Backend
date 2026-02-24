@@ -56,6 +56,22 @@ class OndcClient {
     try {
       const transaction_id = randomUUID();
       logger.info(`Starting ONDC flow: ${flowId} for session: ${sessionId}, transaction_id: ${transaction_id}`);
+      
+      // Step 1: Initialize the session in the Mock Server's cache
+      try {
+        await this.client.post(`${ONDC_BASE_PATH}/flows/init-session`, {
+          session_id: sessionId,
+          domain: 'ONDC:AGR10',
+          version: '2.0.0',
+          np_type: 'BAP',
+        });
+        logger.info(`Session initialized for session: ${sessionId}`);
+      } catch (initError: any) {
+        logger.warn(`Session init returned error (may already exist): ${initError.message}`);
+        // Continue even if init fails - session may already exist
+      }
+
+      // Step 2: Create the flow
       const response = await this.client.post(`${ONDC_BASE_PATH}/flows/new`, {
         flow_id: flowId,
         session_id: sessionId,
