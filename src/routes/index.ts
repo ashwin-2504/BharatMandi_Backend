@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { transactionController } from '../controllers/transactionController.js';
+import { productController } from '../controllers/productController.js';
 
 const router = Router();
 
@@ -17,5 +18,10 @@ router.post('/api/select', transactionController.select);
 router.post('/api/init', transactionController.init);
 router.post('/api/confirm', transactionController.confirm);
 router.get('/api/status/:transactionId', transactionController.getStatus);
+
+// Product routes
+router.post('/api/products', productController.addProduct);
+router.get('/api/products', productController.getAllProducts);
+router.get('/api/products/seller/:sellerId', productController.getSellerProducts);
 
 export default router;
