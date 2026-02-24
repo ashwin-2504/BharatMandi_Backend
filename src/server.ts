@@ -6,11 +6,15 @@ validateEnv();
 
 const PORT = config.port;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   logger.info(`BharatMandi Backend listening on port ${PORT}`, {
     port: PORT,
     env: config.nodeEnv
   });
+
+  // Check ONDC Mock Server connectivity on startup to "wake it up"
+  const { ondcClient } = await import('./integrations/ondcClient.js');
+  await ondcClient.checkHealth();
 });
 
 // Graceful Shutdown
