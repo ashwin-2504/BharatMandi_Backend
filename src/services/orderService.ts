@@ -1,0 +1,59 @@
+import { createClient } from '@supabase/supabase-js';
+import { logger } from '../utils/logger.js';
+import { config } from '../utils/config.js';
+import { Order, OrderStats } from '../types/order.js';
+
+const supabase = createClient(config.supabaseUrl, config.supabaseKey);
+
+export class OrderService {
+  async getSellerOrders(sellerId: string): Promise<Order[]> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('seller_id', sellerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error(`Error fetching orders for seller ${sellerId}`, error);
+      throw error;
+    }
+
+    return data || [];
+  }
+
+  async getSellerStats(sellerId: string): Promise<OrderStats> {
+    try {
+      // Fetch product count
+      const { count: productsCount, error: pError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('seller_id', sellerId);
+
+      if (pError) throw pError;
+
+      // Fetch order stats
+      const { data: orders, error: oError } = await supabase
+        .from('orders')
+        .select('total_amount, status')
+        .eq('seller_id', sellerId);
+
+      if (oError) throw oError;
+
+      const revenue = orders?.reduce((acc, order) => acc + Number(order.total_amount), 0) || 0;
+      const ordersCount = orders?.length || 0;
+      const pendingOrdersCount = orders?.filter(o => o.status === 'PENDING').length || 0;
+
+      return {
+        productsCount: productsCount || 0,
+        ordersCount,
+        revenue,
+        pendingOrdersCount
+      };
+    } catch (error) {
+      logger.error(`Error calculating stats for seller ${sellerId}`, error);
+      throw error;
+    }
+  }
+}
+
+export const orderService = new OrderService();
