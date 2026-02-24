@@ -17,7 +17,7 @@ class OndcClient {
 
     this.client = axios.create({
       baseURL: normalizedBaseUrl,
-      timeout: 8000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': MOCK_API_KEY,
