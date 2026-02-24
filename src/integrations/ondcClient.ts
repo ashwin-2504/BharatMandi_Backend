@@ -7,12 +7,13 @@ import { config } from '../utils/config.js';
 
 const MOCK_SERVICE_URL = config.mockServiceUrl;
 const MOCK_API_KEY = config.mockApiKey;
+const ONDC_BASE_PATH = config.mockOndcPath;
 
 class OndcClient {
   private client: AxiosInstance;
 
   constructor() {
-    // Ensure baseURL ends with a slash and paths don't start with one to avoid stripping the base path in Axios
+    // Ensure baseURL ends with a slash for proper path joining
     const normalizedBaseUrl = MOCK_SERVICE_URL.endsWith('/') ? MOCK_SERVICE_URL : `${MOCK_SERVICE_URL}/`;
 
     this.client = axios.create({
@@ -25,11 +26,29 @@ class OndcClient {
     });
   }
 
+  async checkHealth() {
+    try {
+      logger.info(`Checking ONDC Mock Server health at: ${MOCK_SERVICE_URL}/health`);
+      const response = await this.client.get('health');
+      logger.info('ONDC Mock Server Connectivity: SUCCESS', { 
+        status: response.data?.status || 'OK',
+        url: `${MOCK_SERVICE_URL}/health`
+      });
+      return true;
+    } catch (error: any) {
+      logger.error(`ONDC Mock Server Connectivity: FAILED at ${MOCK_SERVICE_URL}/health`, { 
+        error: error.message,
+        code: error.code
+      });
+      return false;
+    }
+  }
+
   async startFlow(flowId: string, sessionId: string) {
     try {
       const transaction_id = randomUUID();
       logger.info(`Starting ONDC flow: ${flowId} for session: ${sessionId}, transaction_id: ${transaction_id}`);
-      const response = await this.client.post('flows/new', {
+      const response = await this.client.post(`${ONDC_BASE_PATH}/flows/new`, {
         flow_id: flowId,
         session_id: sessionId,
         transaction_id,
@@ -44,7 +63,7 @@ class OndcClient {
   async proceedFlow(transactionId: string, sessionId: string, inputs?: object) {
     try {
       logger.info(`Proceeding ONDC flow for transaction: ${transactionId} (session: ${sessionId})`, { inputs });
-      const response = await this.client.post('flows/proceed', {
+      const response = await this.client.post(`${ONDC_BASE_PATH}/flows/proceed`, {
         transaction_id: transactionId,
         session_id: sessionId,
         inputs,
@@ -58,7 +77,7 @@ class OndcClient {
   async triggerManualAction(action: string, payload: object) {
     try {
       logger.info(`Triggering manual action: ${action}`, { payload });
-      const response = await this.client.post('action/trigger', {
+      const response = await this.client.post(`${ONDC_BASE_PATH}/action/trigger`, {
         action,
         payload,
       });

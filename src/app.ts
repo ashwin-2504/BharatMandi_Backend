@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import routes from './routes/index.js';
+import { ondcClient } from './integrations/ondcClient.js';
 import { errorHandler } from './middleware/error.js';
 import { logger } from './utils/logger.js';
 import { config } from './utils/config.js';
@@ -56,5 +57,13 @@ app.use(routes);
 
 // Error Handling
 app.use(errorHandler);
+
+// Initial connectivity check with ONDC Mock Server
+if (config.nodeEnv === 'production') {
+  ondcClient.checkHealth().catch(err => logger.error('Initial ONDC health check failed', err));
+} else {
+  // In development, we can run it too but maybe make it less aggressive or just log naturally
+  ondcClient.checkHealth().catch(() => {});
+}
 
 export default app;

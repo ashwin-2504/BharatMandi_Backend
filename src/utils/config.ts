@@ -24,7 +24,7 @@ export const validateEnv = () => {
 validateEnv();
 
 const getMockUrl = () => {
-  const url = process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app/mock/playground';
+  const url = process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app';
   return url.startsWith('http') ? url : `https://${url}`;
 };
 
@@ -33,6 +33,7 @@ export const config = {
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseKey: process.env.SUPABASE_KEY || '',
   mockServiceUrl: getMockUrl(),
+  mockOndcPath: '/mock/playground',
   mockApiKey: process.env.MOCK_API_KEY || '',
   nodeEnv: process.env.NODE_ENV || 'development'
 };
