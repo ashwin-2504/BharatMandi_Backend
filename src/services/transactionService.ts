@@ -47,20 +47,23 @@ export class TransactionService {
   }
 
   async select(transactionId: string, inputs?: object) {
-    const result = await ondcClient.proceedFlow(transactionId, inputs);
+    const sessionId = await this.getSessionId(transactionId);
+    const result = await ondcClient.proceedFlow(transactionId, sessionId, inputs);
     // Use status from response if available, else fallback to 'SELECTED'
     await this.updateTransactionStatus(transactionId, result.status || 'SELECTED');
     return result;
   }
 
   async init(transactionId: string, inputs?: object) {
-    const result = await ondcClient.proceedFlow(transactionId, inputs);
+    const sessionId = await this.getSessionId(transactionId);
+    const result = await ondcClient.proceedFlow(transactionId, sessionId, inputs);
     await this.updateTransactionStatus(transactionId, result.status || 'INITIALIZED');
     return result;
   }
 
   async confirm(transactionId: string, inputs?: any) {
-    const result = await ondcClient.proceedFlow(transactionId, inputs);
+    const sessionId = await this.getSessionId(transactionId);
+    const result = await ondcClient.proceedFlow(transactionId, sessionId, inputs);
     await this.updateTransactionStatus(transactionId, result.status || 'CONFIRMED');
 
     // Record order in 'orders' table if confirmation is successful
@@ -98,6 +101,21 @@ export class TransactionService {
     }
 
     return data;
+  }
+
+  private async getSessionId(transactionId: string): Promise<string> {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('session_id')
+      .eq('transaction_id', transactionId)
+      .single();
+
+    if (error || !data) {
+      logger.error(`Could not find session_id for transaction: ${transactionId}`, error);
+      throw new Error(`Transaction session not found: ${transactionId}`);
+    }
+
+    return data.session_id;
   }
 
   private async saveTransaction(data: Partial<Transaction>) {

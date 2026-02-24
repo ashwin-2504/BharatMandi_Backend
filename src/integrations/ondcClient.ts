@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger.js';
 
@@ -23,22 +24,26 @@ class OndcClient {
 
   async startFlow(flowId: string, sessionId: string) {
     try {
-      logger.info(`Starting ONDC flow: ${flowId} for session: ${sessionId}`);
-      const response = await this.client.post('/flow/start', {
-        flowId,
-        sessionId,
+      const transaction_id = randomUUID();
+      logger.info(`Starting ONDC flow: ${flowId} for session: ${sessionId}, transaction_id: ${transaction_id}`);
+      const response = await this.client.post('/flows/new', {
+        flow_id: flowId,
+        session_id: sessionId,
+        transaction_id,
       });
-      return response.data;
+      // Ensure we return the transactionId to the service
+      return { ...response.data, transactionId: transaction_id };
     } catch (error: any) {
       this.handleError(error, 'startFlow');
     }
   }
 
-  async proceedFlow(transactionId: string, inputs?: object) {
+  async proceedFlow(transactionId: string, sessionId: string, inputs?: object) {
     try {
-      logger.info(`Proceeding ONDC flow for transaction: ${transactionId}`, { inputs });
-      const response = await this.client.post('/flow/proceed', {
-        transactionId,
+      logger.info(`Proceeding ONDC flow for transaction: ${transactionId} (session: ${sessionId})`, { inputs });
+      const response = await this.client.post('/flows/proceed', {
+        transaction_id: transactionId,
+        session_id: sessionId,
         inputs,
       });
       return response.data;
