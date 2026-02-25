@@ -24,7 +24,7 @@ export const validateEnv = () => {
 validateEnv();
 
 const getMockUrl = () => {
-  const url = process.env.MOCK_SERVICE_URL || 'https://ondc-private-mock-server-production.up.railway.app';
+  const url = process.env.MOCK_SERVICE_URL || 'https://ondc-mock-server.onrender.com';
   return url.startsWith('http') ? url : `https://${url}`;
 };
 
