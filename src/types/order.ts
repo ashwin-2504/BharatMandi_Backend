@@ -4,6 +4,7 @@ export interface Order {
   total_amount: number;
   status: 'PENDING' | 'ACCEPTED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
   seller_id: string;
+  buyer_id: string;
   items: any[];
   created_at: string;
   updated_at: string;

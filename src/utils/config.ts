@@ -12,16 +12,11 @@ export const validateEnv = () => {
   const missing = requiredEnv.filter(key => !process.env[key]);
   
   if (missing.length > 0) {
-    const errorMsg = `Missing required environment variables: ${missing.join(', ')}`;
-    logger.error(errorMsg);
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
+    logger.warn(`Missing environment variables: ${missing.join(', ')} — some features may not work`);
   }
 };
 
-// Run validation immediately on import
-validateEnv();
+// Log warnings but don't exit (MVP — graceful degradation)
 
 const getMockUrl = () => {
   const url = process.env.MOCK_SERVICE_URL || 'https://ondc-mock-server.onrender.com';

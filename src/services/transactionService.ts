@@ -1,15 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import { supabase } from '../lib/supabase.js';
 import { ondcClient } from '../integrations/ondcClient.js';
 import { logger } from '../utils/logger.js';
 import { Transaction } from '../types/transaction.js';
-
 import { config } from '../utils/config.js';
-
-const SUPABASE_URL = config.supabaseUrl;
-const SUPABASE_KEY = config.supabaseKey;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export class TransactionService {
   /**
@@ -94,27 +87,93 @@ export class TransactionService {
     const result = await ondcClient.proceedFlow(transactionId, sessionId, inputs);
     await this.updateTransactionStatus(transactionId, result.status || 'CONFIRMED');
 
-    // Record order in 'orders' table if confirmation is successful
     if (result.status === 'CONFIRMED' || result.status === 'SUCCESS' || !result.error) {
+      const orderItems = inputs?.items || [];
+
+      // Step 1: Decrement stock for each item FIRST
+      const decrementedItems: Array<{ id: string; quantity: number }> = [];
+
+      for (const item of orderItems) {
+        if (!item.id || !item.quantity) continue;
+
+        // Fetch current stock
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', item.id)
+          .single();
+
+        if (!product || product.stock_quantity < item.quantity) {
+          // Insufficient stock — rollback already decremented items
+          await this.rollbackStock(decrementedItems);
+          logger.error(`Insufficient stock for product ${item.id}: have ${product?.stock_quantity ?? 0}, need ${item.quantity}`);
+          throw new Error(`Insufficient stock for item: ${item.id}`);
+        }
+
+        // Decrement with optimistic concurrency (check current value hasn't changed)
+        const newQty = product.stock_quantity - item.quantity;
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({ stock_quantity: newQty })
+          .eq('id', item.id)
+          .eq('stock_quantity', product.stock_quantity);
+
+        if (updateError) {
+          await this.rollbackStock(decrementedItems);
+          logger.error(`Failed to decrement stock for product ${item.id}`, updateError);
+          throw new Error(`Stock update failed for item: ${item.id}`);
+        }
+
+        decrementedItems.push({ id: item.id, quantity: item.quantity });
+      }
+
+      // Step 2: Insert order only after all stock decremented
       try {
         const orderData = {
           customer_name: inputs?.customer_name || 'Buyer',
           total_amount: inputs?.total_amount || 0,
           seller_id: inputs?.seller_id || 'unknown_seller',
           buyer_id: inputs?.buyer_id || 'buyer_default',
-          items: inputs?.items || [],
+          items: orderItems,
           status: 'PENDING',
         };
 
-        const { error } = await supabase.from('orders').insert([orderData]);
-        if (error) logger.error('Error recording order after confirmation', error);
-        else logger.info(`Order recorded for transaction: ${transactionId}`);
+        const { error: orderError } = await supabase.from('orders').insert([orderData]);
+        if (orderError) {
+          // Step 3: Compensate — re-increment stock if order insert fails
+          logger.error('Order insert failed, rolling back stock decrements', orderError);
+          await this.rollbackStock(decrementedItems);
+          throw orderError;
+        }
+        logger.info(`Order recorded for transaction: ${transactionId}`);
       } catch (err) {
         logger.error('Error in post-confirmation order recording', err);
+        throw err;
       }
     }
 
     return result;
+  }
+
+  /** Best-effort stock rollback for compensation */
+  private async rollbackStock(items: Array<{ id: string; quantity: number }>) {
+    for (const dec of items) {
+      try {
+        const { data: current } = await supabase
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', dec.id)
+          .single();
+        if (current) {
+          await supabase
+            .from('products')
+            .update({ stock_quantity: current.stock_quantity + dec.quantity })
+            .eq('id', dec.id);
+        }
+      } catch (e) {
+        logger.error(`Failed to rollback stock for product ${dec.id}`, e);
+      }
+    }
   }
 
   async getStatus(transactionId: string) {

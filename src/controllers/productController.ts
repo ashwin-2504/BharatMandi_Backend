@@ -72,6 +72,44 @@ export class ProductController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async updateProduct(req: Request, res: Response) {
+    try {
+      const productId = req.params.id as string;
+      const sellerId = req.body.seller_id as string;
+      const updateData = req.body;
+
+      if (!productId || !sellerId) {
+        return res.status(400).json({ error: 'Missing productId or seller_id' });
+      }
+
+      // Remove seller_id from update payload (not updatable)
+      delete updateData.seller_id;
+
+      const product = await productService.updateProduct(productId, sellerId, updateData);
+      res.json(product);
+    } catch (error) {
+      logger.error('Controller error in updateProduct:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async deleteProduct(req: Request, res: Response) {
+    try {
+      const productId = req.params.id as string;
+      const sellerId = req.query.seller_id as string;
+
+      if (!productId || !sellerId) {
+        return res.status(400).json({ error: 'Missing productId or seller_id' });
+      }
+
+      await productService.deleteProduct(productId, sellerId);
+      res.json({ success: true, message: 'Product deleted' });
+    } catch (error) {
+      logger.error('Controller error in deleteProduct:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const productController = new ProductController();

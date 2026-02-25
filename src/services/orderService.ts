@@ -1,9 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase.js';
 import { logger } from '../utils/logger.js';
-import { config } from '../utils/config.js';
 import { Order, OrderStats } from '../types/order.js';
-
-const supabase = createClient(config.supabaseUrl, config.supabaseKey);
 
 export class OrderService {
   async getSellerOrders(sellerId: string): Promise<Order[]> {

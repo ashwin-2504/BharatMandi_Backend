@@ -5,14 +5,6 @@ import { orderController } from '../controllers/orderController.js';
 
 const router = Router();
 
-// Health endpoint
-router.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    service: 'bharatmandi-backend'
-  });
-});
-
 // Checkout flow creation (backend owns session/flow IDs)
 router.post('/api/checkout/create-flow', transactionController.createFlow);
 
@@ -29,6 +21,8 @@ router.get('/api/products', productController.getAllProducts);
 router.get('/api/products/feed', productController.getFeed);
 router.get('/api/products/search', productController.searchProducts);
 router.get('/api/products/seller/:sellerId', productController.getSellerProducts);
+router.put('/api/products/:id', productController.updateProduct);
+router.delete('/api/products/:id', productController.deleteProduct);
 
 // Order and Stats routes (Seller)
 router.get('/api/orders/seller/:sellerId', orderController.getSellerOrders);
