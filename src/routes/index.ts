@@ -13,6 +13,9 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Checkout flow creation (backend owns session/flow IDs)
+router.post('/api/checkout/create-flow', transactionController.createFlow);
+
 // ONDC Flow routes
 router.post('/api/search', transactionController.search);
 router.post('/api/select', transactionController.select);

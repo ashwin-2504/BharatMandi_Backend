@@ -8,6 +8,16 @@ import {
 import { logger } from '../utils/logger.js';
 
 export class TransactionController {
+  async createFlow(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { usecaseId } = req.body;
+      const result = await transactionService.createFlow(usecaseId);
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async search(req: Request, res: Response, next: NextFunction) {
     try {
       const validatedData = SearchRequestSchema.parse(req.body);

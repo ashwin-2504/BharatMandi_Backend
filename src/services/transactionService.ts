@@ -12,6 +12,35 @@ const SUPABASE_KEY = config.supabaseKey;
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 export class TransactionService {
+  /**
+   * Creates a new checkout flow. The backend owns session/flow creation
+   * so the Native app never generates dynamic IDs itself.
+   */
+  async createFlow(usecaseId: string = 'agricultural_flow_1') {
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const flowId = usecaseId;
+
+    logger.info(`Creating checkout flow: session=${sessionId}, flow=${flowId}`);
+
+    const result = await ondcClient.startFlow(flowId, sessionId);
+
+    const transactionData: Partial<Transaction> = {
+      transaction_id: result.transactionId,
+      session_id: sessionId,
+      flow_id: flowId,
+      status: result.status || 'INITIATED',
+    };
+
+    await this.saveTransaction(transactionData);
+
+    return {
+      sessionId,
+      flowId,
+      transactionId: result.transactionId,
+      status: result.status || 'INITIATED',
+    };
+  }
+
   async search(sessionId: string, flowId: string) {
     // Idempotency check: return existing transaction if session+flow pair exists
     const { data: existing } = await supabase
@@ -49,7 +78,6 @@ export class TransactionService {
   async select(transactionId: string, inputs?: object) {
     const sessionId = await this.getSessionId(transactionId);
     const result = await ondcClient.proceedFlow(transactionId, sessionId, inputs);
-    // Use status from response if available, else fallback to 'SELECTED'
     await this.updateTransactionStatus(transactionId, result.status || 'SELECTED');
     return result;
   }
@@ -73,6 +101,7 @@ export class TransactionService {
           customer_name: inputs?.customer_name || 'Buyer',
           total_amount: inputs?.total_amount || 0,
           seller_id: inputs?.seller_id || 'unknown_seller',
+          buyer_id: inputs?.buyer_id || 'buyer_default',
           items: inputs?.items || [],
           status: 'PENDING',
         };
