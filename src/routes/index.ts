@@ -23,11 +23,13 @@ router.get('/api/status/:transactionId', transactionController.getStatus);
 // Product routes
 router.post('/api/products', productController.addProduct);
 router.get('/api/products', productController.getAllProducts);
+router.get('/api/products/feed', productController.getFeed);
 router.get('/api/products/search', productController.searchProducts);
 router.get('/api/products/seller/:sellerId', productController.getSellerProducts);
 
 // Order and Stats routes
 router.get('/api/orders/seller/:sellerId', orderController.getSellerOrders);
+router.patch('/api/orders/:id/status', orderController.updateOrderStatus);
 router.get('/api/stats/seller/:sellerId', orderController.getSellerStats);
 
 export default router;

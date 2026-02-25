@@ -64,6 +64,21 @@ export class ProductService {
 
     return data || [];
   }
+
+  async getFeed(limit: number = 10): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      logger.error('Error fetching product feed', error);
+      throw error;
+    }
+
+    return data || [];
+  }
 }
 
 export const productService = new ProductService();

@@ -32,6 +32,29 @@ export class OrderController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async updateOrderStatus(req: Request, res: Response) {
+    try {
+      const orderId = req.params.id as string;
+      const { status } = req.body;
+
+      if (!orderId || !status) {
+        return res.status(400).json({ error: 'Missing orderId or status' });
+      }
+
+      // Basic validation of valid statuses
+      const validStatuses = ['PENDING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status provided' });
+      }
+
+      const order = await orderService.updateOrderStatus(orderId, status);
+      res.json(order);
+    } catch (error) {
+      logger.error('Controller error in updateOrderStatus:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const orderController = new OrderController();

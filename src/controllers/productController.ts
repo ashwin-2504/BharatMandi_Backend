@@ -61,6 +61,17 @@ export class ProductController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async getFeed(req: Request, res: Response) {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const products = await productService.getFeed(limit);
+      res.json(products);
+    } catch (error) {
+      logger.error('Controller error in getFeed:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const productController = new ProductController();

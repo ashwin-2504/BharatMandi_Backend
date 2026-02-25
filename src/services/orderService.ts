@@ -54,6 +54,22 @@ export class OrderService {
       throw error;
     }
   }
+
+  async updateOrderStatus(orderId: string, status: string): Promise<Order> {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error(`Error updating order status for order ${orderId}`, error);
+      throw error;
+    }
+
+    return data;
+  }
 }
 
 export const orderService = new OrderService();
