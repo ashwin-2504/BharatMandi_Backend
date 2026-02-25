@@ -21,6 +21,21 @@ export class OrderService {
     return data || [];
   }
 
+  async getBuyerOrders(buyerId: string): Promise<Order[]> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('buyer_id', buyerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error(`Error fetching orders for buyer ${buyerId}`, error);
+      throw error;
+    }
+
+    return data || [];
+  }
+
   async getSellerStats(sellerId: string): Promise<OrderStats> {
     try {
       // Fetch product count
@@ -51,6 +66,31 @@ export class OrderService {
       };
     } catch (error) {
       logger.error(`Error calculating stats for seller ${sellerId}`, error);
+      throw error;
+    }
+  }
+
+  async getBuyerStats(buyerId: string): Promise<OrderStats> {
+    try {
+      const { data: orders, error: oError } = await supabase
+        .from('orders')
+        .select('total_amount, status')
+        .eq('buyer_id', buyerId);
+
+      if (oError) throw oError;
+
+      const totalSpent = orders?.reduce((acc, order) => acc + Number(order.total_amount), 0) || 0;
+      const ordersCount = orders?.length || 0;
+      const pendingOrdersCount = orders?.filter(o => o.status === 'PENDING').length || 0;
+
+      return {
+        productsCount: 0,
+        ordersCount,
+        revenue: totalSpent,
+        pendingOrdersCount
+      };
+    } catch (error) {
+      logger.error(`Error calculating stats for buyer ${buyerId}`, error);
       throw error;
     }
   }

@@ -55,6 +55,36 @@ export class OrderController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async getBuyerOrders(req: Request, res: Response) {
+    try {
+      const buyerId = req.params.buyerId as string;
+      if (!buyerId) {
+        return res.status(400).json({ error: 'Missing buyerId' });
+      }
+
+      const orders = await orderService.getBuyerOrders(buyerId);
+      res.json(orders);
+    } catch (error) {
+      logger.error('Controller error in getBuyerOrders:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
+  async getBuyerStats(req: Request, res: Response) {
+    try {
+      const buyerId = req.params.buyerId as string;
+      if (!buyerId) {
+        return res.status(400).json({ error: 'Missing buyerId' });
+      }
+
+      const stats = await orderService.getBuyerStats(buyerId);
+      res.json(stats);
+    } catch (error) {
+      logger.error('Controller error in getBuyerStats:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }
 
 export const orderController = new OrderController();

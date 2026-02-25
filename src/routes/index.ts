@@ -30,9 +30,13 @@ router.get('/api/products/feed', productController.getFeed);
 router.get('/api/products/search', productController.searchProducts);
 router.get('/api/products/seller/:sellerId', productController.getSellerProducts);
 
-// Order and Stats routes
+// Order and Stats routes (Seller)
 router.get('/api/orders/seller/:sellerId', orderController.getSellerOrders);
 router.patch('/api/orders/:id/status', orderController.updateOrderStatus);
 router.get('/api/stats/seller/:sellerId', orderController.getSellerStats);
+
+// Order and Stats routes (Buyer)
+router.get('/api/orders/buyer/:buyerId', orderController.getBuyerOrders);
+router.get('/api/stats/buyer/:buyerId', orderController.getBuyerStats);
 
 export default router;
